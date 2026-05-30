@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String
+  email               String               @unique
+  createdAt           DateTime             @default(now())
+  memberships         GroupMember[]
+  submittedFeedback   FeedbackSubmission[] @relation("SubmittedFeedback")
+  receivedFeedback    FeedbackSubmission[] @relation("ReceivedFeedback")
+  summaries           AISummary[]
+}
+
+model Group {
+  id        String         @id @default(cuid())
+  name      String
+  createdAt DateTime       @default(now())
+  members   GroupMember[]
+  forms     FeedbackForm[]
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  userId   String
+  groupId  String
+  joinedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+}
+
+model FeedbackForm {
+  id          String               @id @default(cuid())
+  groupId     String
+  title       String
+  isOpen      Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  group       Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  submissions FeedbackSubmission[]
+  summaries   AISummary[]
+}
+
+model FeedbackSubmission {
+  id                String       @id @default(cuid())
+  formId            String
+  submittedByUserId String
+  targetUserId      String
+  rating            Int
+  strengths         String
+  improvements      String
+  submittedAt       DateTime     @default(now())
+  form              FeedbackForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submittedBy       User         @relation("SubmittedFeedback", fields: [submittedByUserId], references: [id], onDelete: Cascade)
+  targetUser        User         @relation("ReceivedFeedback", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, submittedByUserId, targetUserId])
+  @@index([formId, targetUserId])
+}
+
+model AISummary {
+  id             String        @id @default(cuid())
+  formId         String
+  targetUserId   String
+  summaryText    String
+  sentimentScore Float
+  generatedAt    DateTime      @default(now())
+  status         String        @default("GENERATED")
+  errorMessage   String?
+  form           FeedbackForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  targetUser     User          @relation(fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, targetUserId])
+}
+
