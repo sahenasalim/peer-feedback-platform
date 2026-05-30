@@ -16,9 +16,17 @@ type AdminForm = {
   summaries: Array<{ targetUserId: string; status: string }>;
 };
 
-export function AdminGroupManager({ initialGroups, initialUsers, initialForms }: { initialGroups: Group[]; initialUsers: User[]; initialForms: AdminForm[] }) {
+export function AdminGroupManager({
+  initialGroups,
+  initialUsers,
+  initialForms,
+}: {
+  initialGroups: Group[];
+  initialUsers: User[];
+  initialForms: AdminForm[];
+}) {
   const [groups, setGroups] = useState(initialGroups);
-  const [users] = useState(initialUsers);
+  const [users, setUsers] = useState(initialUsers);
   const [forms, setForms] = useState(initialForms);
   const [groupName, setGroupName] = useState("");
   const [memberUserId, setMemberUserId] = useState("");
@@ -27,7 +35,12 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
   const [formGroupId, setFormGroupId] = useState(initialGroups[0]?.id ?? "");
   const [generating, setGenerating] = useState<string | null>(null);
 
-  const students = users;
+  // New student registration
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [addingStudent, setAddingStudent] = useState(false);
+
   const stats = useMemo(() => {
     const map = new Map<string, { ratings: number[]; name: string }>();
     for (const form of forms) {
@@ -42,12 +55,15 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
     return Array.from(map.entries()).map(([userId, value]) => ({
       userId,
       name: value.name,
-      average: value.ratings.length ? value.ratings.reduce((sum, rating) => sum + rating, 0) / value.ratings.length : 0,
+      average: value.ratings.length
+        ? value.ratings.reduce((sum, r) => sum + r, 0) / value.ratings.length
+        : 0,
       count: value.ratings.length,
     }));
   }, [forms]);
 
   async function createGroup() {
+    if (!groupName.trim()) return toast.error("Enter a group name");
     const response = await fetch("/api/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -70,7 +86,8 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
     if (!response.ok) return toast.error(payload.message ?? "Unable to add member");
     setGroups((current) =>
       current.map((group) =>
-        group.id === memberGroupId && !group.members.some((member) => member.user.id === payload.member.user.id)
+        group.id === memberGroupId &&
+        !group.members.some((m) => m.user.id === payload.member.user.id)
           ? { ...group, members: [...group.members, { user: payload.member.user }] }
           : group,
       ),
@@ -78,7 +95,28 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
     toast.success("Member added");
   }
 
+  async function addNewStudent() {
+    if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) {
+      return toast.error("Please fill in all fields");
+    }
+    setAddingStudent(true);
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName, email: newEmail, password: newPassword }),
+    });
+    const payload = await response.json();
+    setAddingStudent(false);
+    if (!response.ok) return toast.error(payload.message ?? "Unable to add student");
+    setUsers((current) => [...current, payload.user]);
+    setNewName("");
+    setNewEmail("");
+    setNewPassword("");
+    toast.success(`${payload.user.name} added successfully`);
+  }
+
   async function createForm() {
+    if (!formTitle.trim()) return toast.error("Enter a form title");
     const response = await fetch("/api/forms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -100,7 +138,11 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
     });
     const payload = await response.json();
     if (!response.ok) return toast.error(payload.message ?? "Unable to update form");
-    setForms((current) => current.map((item) => (item.id === form.id ? { ...item, isOpen: payload.form.isOpen } : item)));
+    setForms((current) =>
+      current.map((item) =>
+        item.id === form.id ? { ...item, isOpen: payload.form.isOpen } : item,
+      ),
+    );
     toast.success(payload.form.isOpen ? "Form opened" : "Form closed");
   }
 
@@ -109,22 +151,16 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
       `Delete "${form.title}"? This also removes its feedback submissions and AI summaries.`,
     );
     if (!confirmed) return;
-
-    const response = await fetch(`/api/forms/${form.id}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(`/api/forms/${form.id}`, { method: "DELETE" });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      toast.error(payload.message ?? "Unable to delete form");
-      return;
-    }
-
+    if (!response.ok) return toast.error(payload.message ?? "Unable to delete form");
     setForms((current) => current.filter((item) => item.id !== form.id));
     toast.success("Form deleted");
   }
 
   async function generateSummary(formId: string, targetUserId: string) {
-    setGenerating(`${formId}:${targetUserId}`);
+    const key = `${formId}:${targetUserId}`;
+    setGenerating(key);
     const response = await fetch("/api/ai/summarize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -133,7 +169,7 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
     const payload = await response.json().catch(() => ({}));
     setGenerating(null);
     if (!response.ok) {
-      toast.error(payload.message ?? payload.summary?.errorMessage ?? "Summary generation failed — retry");
+      toast.error(payload.message ?? "Summary generation failed — retry");
     } else {
       toast.success("AI summary generated");
     }
@@ -143,7 +179,7 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
           ? {
               ...form,
               summaries: [
-                ...form.summaries.filter((summary) => summary.targetUserId !== targetUserId),
+                ...form.summaries.filter((s) => s.targetUserId !== targetUserId),
                 { targetUserId, status: response.ok ? "GENERATED" : "FAILED" },
               ],
             }
@@ -153,95 +189,221 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[360px,1fr]">
+    <div className="grid gap-6 lg:grid-cols-[380px,1fr]">
+      {/* LEFT SIDEBAR */}
       <aside className="space-y-5">
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Groups</h2>
-          <div className="mt-4 flex gap-2">
-            <input value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="Group name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm" />
-            <button onClick={createGroup} className="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white">Create</button>
+
+        {/* Create Group */}
+        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-950">Create group</h2>
+          <div className="mt-3 flex gap-2">
+            <input
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              placeholder="e.g. CS Group B"
+              className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            />
+            <button
+              onClick={createGroup}
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Create
+            </button>
           </div>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2">
+            {groups.length === 0 && (
+              <p className="text-sm text-slate-500">No groups yet.</p>
+            )}
             {groups.map((group) => (
-              <div key={group.id} className="rounded-md bg-slate-50 p-3">
-                <p className="font-medium text-slate-900">{group.name}</p>
-                <p className="text-sm text-slate-500">{group.members.length} members</p>
+              <div key={group.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-sm font-medium text-slate-900">{group.name}</p>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                  {group.members.length} members
+                </span>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Add member</h2>
-          <select value={memberGroupId} onChange={(event) => setMemberGroupId(event.target.value)} className="mt-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-            {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+        {/* Add Member to Group */}
+        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-950">Add member to group</h2>
+          <select
+            value={memberGroupId}
+            onChange={(e) => setMemberGroupId(e.target.value)}
+            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+          >
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>{group.name}</option>
+            ))}
           </select>
-          <select value={memberUserId} onChange={(event) => setMemberUserId(event.target.value)} className="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+          <select
+            value={memberUserId}
+            onChange={(e) => setMemberUserId(e.target.value)}
+            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+          >
             <option value="">Select student</option>
-            {students.map((user) => <option key={user.id} value={user.id}>{user.name} ({user.email})</option>)}
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+            ))}
           </select>
-          <button onClick={addMember} disabled={!memberGroupId || !memberUserId} className="mt-3 w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white disabled:bg-slate-400">Add member</button>
+          <button
+            onClick={addMember}
+            disabled={!memberGroupId || !memberUserId}
+            className="mt-3 w-full rounded-xl bg-slate-950 px-3 py-2 text-sm font-medium text-white disabled:bg-slate-300"
+          >
+            Add member
+          </button>
+        </section>
+
+        {/* Register New Student */}
+        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-950">Register new student</h2>
+          <p className="mt-1 text-xs text-slate-500">Add a new student account to the platform.</p>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Full name"
+            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          />
+          <input
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="Email address"
+            type="email"
+            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          />
+          <input
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Temporary password (share with student)"
+            type="password"
+            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          />
+          <button
+            onClick={addNewStudent}
+            disabled={addingStudent}
+            className="mt-3 w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:bg-slate-300"
+          >
+            {addingStudent ? "Adding..." : "Add student"}
+          </button>
         </section>
       </aside>
 
+      {/* MAIN CONTENT */}
       <main className="space-y-6">
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Create feedback form</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr,180px,auto]">
-            <input value={formTitle} onChange={(event) => setFormTitle(event.target.value)} placeholder="Form title" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-            <select value={formGroupId} onChange={(event) => setFormGroupId(event.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">
-              {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+
+        {/* Create Feedback Form */}
+        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-950">Create feedback form</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr,180px,auto]">
+            <input
+              value={formTitle}
+              onChange={(e) => setFormTitle(e.target.value)}
+              placeholder="e.g. Sprint 2 Peer Review"
+              className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            />
+            <select
+              value={formGroupId}
+              onChange={(e) => setFormGroupId(e.target.value)}
+              className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+            >
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>{group.name}</option>
+              ))}
             </select>
-            <button onClick={createForm} className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white">Create</button>
+            <button
+              onClick={createForm}
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Create
+            </button>
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Feedback forms</h2>
+        {/* Feedback Forms List */}
+        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-950">Feedback forms</h2>
           <div className="mt-4 space-y-4">
+            {forms.length === 0 && (
+              <p className="text-sm text-slate-500">No forms yet. Create one above.</p>
+            )}
             {forms.map((form) => (
-              <div key={form.id} className="rounded-lg border border-slate-200 p-4">
+              <div key={form.id} className="rounded-2xl border border-slate-200 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-semibold text-slate-950">{form.title}</h3>
-                    <p className="text-sm text-slate-500">{form.group.name} · {form.isOpen ? "Open" : "Closed"}</p>
+                    <p className="text-sm text-slate-500">
+                      {form.group.name}
+                      <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${form.isOpen ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                        {form.isOpen ? "Open" : "Closed"}
+                      </span>
+                    </p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => toggleForm(form)} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
-                      {form.isOpen ? "Close" : "Open"}
+                    <button
+                      onClick={() => toggleForm(form)}
+                      className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      {form.isOpen ? "Close form" : "Open form"}
                     </button>
-                    <button onClick={() => deleteForm(form)} className="rounded-md border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50">
+                    <button
+                      onClick={() => deleteForm(form)}
+                      className="rounded-xl border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+                    >
                       Delete
                     </button>
                   </div>
                 </div>
+
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {form.group.members.map(({ user }) => {
-                    const ratings = form.submissions.filter((submission) => submission.targetUserId === user.id).map((submission) => submission.rating);
-                    const average = ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0;
-                    const summary = form.summaries.find((item) => item.targetUserId === user.id);
+                    const ratings = form.submissions
+                      .filter((s) => s.targetUserId === user.id)
+                      .map((s) => s.rating);
+                    const average = ratings.length
+                      ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+                      : 0;
+                    const summary = form.summaries.find((s) => s.targetUserId === user.id);
                     const key = `${form.id}:${user.id}`;
+                    const hasFeedback = ratings.length > 0;
+
                     return (
-                      <div key={user.id} className="rounded-md bg-slate-50 p-3">
+                      <div key={user.id} className="rounded-2xl bg-slate-50 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="font-medium text-slate-900">{user.name}</p>
-                            <p className="text-xs text-slate-500">{ratings.length} reviews</p>
+                            <p className="text-xs text-slate-500">{ratings.length} review{ratings.length !== 1 ? "s" : ""} received</p>
                           </div>
-                          <StarRating value={Math.round(average)} readOnly />
+                          {hasFeedback && <StarRating value={Math.round(average)} readOnly />}
                         </div>
+                        {hasFeedback && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {average.toFixed(1)} average rating
+                          </p>
+                        )}
                         <button
                           onClick={() => generateSummary(form.id, user.id)}
-                          disabled={ratings.length === 0 || generating === key}
-                          className="mt-3 w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:bg-slate-400"
+                          disabled={!hasFeedback || generating === key}
+                          className={`mt-3 w-full rounded-xl px-3 py-2 text-sm font-medium text-white transition ${
+                            !hasFeedback
+                              ? "bg-slate-300 cursor-not-allowed"
+                              : summary?.status === "GENERATED"
+                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                : summary?.status === "FAILED"
+                                  ? "bg-rose-600 hover:bg-rose-700"
+                                  : "bg-emerald-600 hover:bg-emerald-700"
+                          }`}
                         >
                           {generating === key
                             ? "Generating..."
-                            : ratings.length === 0
+                            : !hasFeedback
                               ? "Needs feedback first"
                               : summary?.status === "GENERATED"
-                                ? "Regenerate AI Summary"
-                                : "Generate AI Summary"}
+                                ? "Regenerate AI summary"
+                                : summary?.status === "FAILED"
+                                  ? "Retry AI summary"
+                                  : "Generate AI summary"}
                         </button>
                       </div>
                     );
@@ -252,13 +414,28 @@ export function AdminGroupManager({ initialGroups, initialUsers, initialForms }:
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Aggregate stats</h2>
+        {/* Aggregate Stats */}
+        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-950">Aggregate stats</h2>
+          <p className="mt-1 text-xs text-slate-500">Average ratings across all forms per student.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {stats.length === 0 && (
+              <p className="text-sm text-slate-500">No ratings yet.</p>
+            )}
             {stats.map((item) => (
-              <div key={item.userId} className="rounded-md bg-slate-50 p-3">
-                <p className="font-medium text-slate-900">{item.name}</p>
-                <p className="text-sm text-slate-500">{item.count ? `${item.average.toFixed(1)} average across ${item.count} reviews` : "No ratings yet"}</p>
+              <div key={item.userId} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">{item.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {item.count ? `${item.count} review${item.count !== 1 ? "s" : ""}` : "No reviews yet"}
+                  </p>
+                </div>
+                {item.count > 0 && (
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-950">{item.average.toFixed(1)}</p>
+                    <StarRating value={Math.round(item.average)} readOnly />
+                  </div>
+                )}
               </div>
             ))}
           </div>
