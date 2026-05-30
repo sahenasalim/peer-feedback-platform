@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -7,11 +6,22 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setAllowed(localStorage.getItem("peer-feedback-role") === "admin");
+    try {
+      const raw = sessionStorage.getItem("peer-feedback-user");
+      if (!raw) { setAllowed(false); return; }
+      const user = JSON.parse(raw);
+      setAllowed(user?.role === "ADMIN");
+    } catch {
+      setAllowed(false);
+    }
   }, []);
 
   if (allowed === null) {
-    return <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">Checking access...</div>;
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-600 shadow-sm animate-pulse">
+        Checking access...
+      </div>
+    );
   }
 
   if (!allowed) {

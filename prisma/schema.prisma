@@ -12,6 +12,8 @@ model User {
   id                  String               @id @default(cuid())
   name                String
   email               String               @unique
+  password            String               @default("")
+  role                String               @default("STUDENT")
   createdAt           DateTime             @default(now())
   memberships         GroupMember[]
   submittedFeedback   FeedbackSubmission[] @relation("SubmittedFeedback")

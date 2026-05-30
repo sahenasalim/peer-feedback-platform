@@ -1,60 +1,59 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-};
-
-const ADMIN_PASSWORD = "admin123";
 
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"student" | "admin">("student");
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/users")
-      .then((response) => response.json())
-      .then((payload) => {
-        const fetchedUsers = payload.users ?? [];
-        setUsers(fetchedUsers);
-        setSelectedUserId(fetchedUsers[0]?.id ?? "");
-      })
-      .catch(() => toast.error("Could not load students"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (mode === "admin") {
-      if (adminPassword.trim() !== ADMIN_PASSWORD) {
-        toast.error("Use the demo admin password: admin123");
-        return;
-      }
-      localStorage.setItem("peer-feedback-role", "admin");
+    if (!email.trim() || !password.trim()) {
+      toast.error("Please enter your email and password");
+      return;
+    }
+
+    setLoading(true);
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    setLoading(false);
+
+    if (!response.ok) {
+      toast.error(payload.message ?? "Invalid email or password");
+      return;
+    }
+
+    const user = payload.user;
+
+    if (mode === "admin" && user.role !== "ADMIN") {
+      toast.error("This account does not have admin access");
+      return;
+    }
+
+    if (mode === "student" && user.role !== "STUDENT") {
+      toast.error("Please use the admin login for this account");
+      return;
+    }
+
+    // Store minimal session info
+    sessionStorage.setItem("peer-feedback-user", JSON.stringify(user));
+
+    if (user.role === "ADMIN") {
       router.push("/admin");
-      return;
+    } else {
+      router.push(`/dashboard?userId=${user.id}`);
     }
-
-    const selectedUser = users.find((user) => user.id === selectedUserId);
-    if (!selectedUser) {
-      toast.error("Choose a student to continue");
-      return;
-    }
-
-    localStorage.setItem("peer-feedback-role", "student");
-    localStorage.setItem("peer-feedback-user-id", selectedUser.id);
-    localStorage.setItem("peer-feedback-user-name", selectedUser.name);
-    router.push(`/dashboard?userId=${selectedUser.id}`);
   }
 
   return (
@@ -63,22 +62,28 @@ export default function LoginPage() {
         <section className="overflow-hidden rounded-[2rem] bg-slate-950 px-8 py-10 shadow-strong text-white">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200">
             <span className="h-2 w-2 rounded-full bg-emerald-300" />
-            Impressive look and feel
+            Peer Feedback Platform
           </div>
-          <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-300">Peer Feedback Platform</p>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white">Start as a student or admin</h1>
+          <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-300">
+            Secure Login
+          </p>
+          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white">
+            Start as a student or admin
+          </h1>
           <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">
-            Students submit anonymous teammate reviews. Admins manage review forms and generate AI summaries from received feedback.
+            Students submit anonymous teammate reviews. Admins manage review
+            forms and generate AI summaries from received feedback.
           </p>
 
           <div className="mt-8 grid gap-4">
             {[
-              ["Student", "Submit reviews for your teammates and follow progress."],
-              ["Admin", "Create forms, monitor submissions, and generate AI summaries."],
-            ].map(([title, description]) => (
+              ["Student", "Submit reviews for your teammates and follow progress.", "alice@demo.com / alice123"],
+              ["Admin", "Create forms, monitor submissions, and generate AI summaries.", "admin@demo.com / admin123"],
+            ].map(([title, description, demo]) => (
               <div key={title} className="rounded-3xl border border-white/10 bg-white/5 p-5">
                 <h2 className="font-semibold text-white">{title}</h2>
                 <p className="mt-2 text-sm text-slate-300">{description}</p>
+                <p className="mt-2 text-xs font-mono text-emerald-400">Demo: {demo}</p>
               </div>
             ))}
           </div>
@@ -89,57 +94,60 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setMode("student")}
-              className={`rounded-full px-5 py-3 text-sm font-semibold transition ${mode === "student" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"}`}
+              className={`rounded-full px-5 py-3 text-sm font-semibold transition ${
+                mode === "student" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"
+              }`}
             >
               Student
             </button>
             <button
               type="button"
               onClick={() => setMode("admin")}
-              className={`rounded-full px-5 py-3 text-sm font-semibold transition ${mode === "admin" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"}`}
+              className={`rounded-full px-5 py-3 text-sm font-semibold transition ${
+                mode === "admin" ? "bg-white text-slate-950 shadow-sm" : "text-slate-600"
+              }`}
             >
               Admin
             </button>
           </div>
 
-          {mode === "student" ? (
-            <label className="mt-8 block">
-              <span className="text-sm font-medium text-slate-700">Your name</span>
-              <select
-                value={selectedUserId}
-                onChange={(event) => setSelectedUserId(event.target.value)}
-                disabled={loading}
-                className="input-fancy mt-3"
-              >
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.email})
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
-            <label className="mt-8 block">
-              <span className="text-sm font-medium text-slate-700">Admin password</span>
-              <input
-                type="password"
-                value={adminPassword}
-                onChange={(event) => setAdminPassword(event.target.value)}
-                placeholder="admin123"
-                className="input-fancy mt-3"
-              />
-            </label>
-          )}
+          <label className="mt-8 block">
+            <span className="text-sm font-medium text-slate-700">Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={mode === "admin" ? "admin@demo.com" : "alice@demo.com"}
+              className="input-fancy mt-3"
+              required
+            />
+          </label>
 
-          <button className="btn-primary mt-8 w-full">
-            Continue
+          <label className="mt-4 block">
+            <span className="text-sm font-medium text-slate-700">Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="input-fancy mt-3"
+              required
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary mt-8 w-full disabled:opacity-50"
+          >
+            {loading ? "Signing in..." : "Continue"}
           </button>
         </form>
       </div>
 
       <section className="mt-10 grid gap-4 md:grid-cols-3">
         {[
-          ["1", "Student submits reviews", "Pick your name and review each teammate with a rating, strength, and improvement."],
+          ["1", "Student logs in", "Sign in with your email and password to access your feedback dashboard."],
           ["2", "Feedback stays anonymous", "The dashboard shows progress and summaries, not who wrote each comment."],
           ["3", "Admin generates AI summary", "After reviews are submitted, admin creates a Groq-powered summary for each student."],
         ].map(([step, title, body]) => (
