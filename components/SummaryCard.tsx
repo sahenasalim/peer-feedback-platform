@@ -45,7 +45,16 @@ export function SummaryCard({ formTitle, summaryText, status = "GENERATED", erro
     );
   }
 
-  const data = JSON.parse(summaryText) as ParsedSummary;
+  let data: ParsedSummary;
+  try {
+    data = JSON.parse(summaryText) as ParsedSummary;
+  } catch {
+    return (
+      <div className="rounded-lg border border-rose-200 bg-white p-5 shadow-sm">
+        <p className="text-sm text-rose-600">Summary data is corrupted. Please retry.</p>
+      </div>
+    );
+  }
   const sentimentLabel = data.overallSentiment.replace("_", " ");
 
   return (
