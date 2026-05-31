@@ -135,13 +135,50 @@ export default function LoginPage() {
             />
           </label>
 
-          <button
+<button
             type="submit"
             disabled={loading}
             className="btn-primary mt-8 w-full disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Continue"}
+            {loading ? "Signing in..." : "Continue →"}
           </button>
+
+          <div className="mt-8 rounded-2xl bg-slate-50 p-5 border border-slate-100">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">What happens next</p>
+            <div className="space-y-3">
+              {mode === "student" ? (
+                <>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">1</span>
+                    <p className="text-sm text-slate-600">See your assigned feedback forms</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">2</span>
+                    <p className="text-sm text-slate-600">Submit anonymous reviews for each teammate</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">3</span>
+                    <p className="text-sm text-slate-600">View your AI-generated feedback summary</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">1</span>
+                    <p className="text-sm text-slate-600">Create groups and add students</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">2</span>
+                    <p className="text-sm text-slate-600">Create and manage feedback forms</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">3</span>
+                    <p className="text-sm text-slate-600">Generate AI summaries for each student</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </form>
       </div>
 

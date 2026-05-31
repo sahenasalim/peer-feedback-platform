@@ -201,7 +201,7 @@ export function AdminGroupManager({
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="e.g. CS Group B"
-              className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+              className="input-fancy min-w-0 flex-1"
             />
             <button
               onClick={createGroup}
@@ -231,7 +231,7 @@ export function AdminGroupManager({
           <select
             value={memberGroupId}
             onChange={(e) => setMemberGroupId(e.target.value)}
-            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+            className="input-fancy mt-3"
           >
             {groups.map((group) => (
               <option key={group.id} value={group.id}>{group.name}</option>
@@ -240,7 +240,7 @@ export function AdminGroupManager({
           <select
             value={memberUserId}
             onChange={(e) => setMemberUserId(e.target.value)}
-            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+            className="input-fancy mt-3"
           >
             <option value="">Select student</option>
             {users.map((user) => (
@@ -264,21 +264,21 @@ export function AdminGroupManager({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Full name"
-            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className="input-fancy mt-3"
           />
           <input
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Email address"
             type="email"
-            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className="input-fancy mt-3"
           />
           <input
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Temporary password (share with student)"
             type="password"
-            className="mt-3 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className="input-fancy mt-3"
           />
           <button
             onClick={addNewStudent}
@@ -306,7 +306,7 @@ export function AdminGroupManager({
             <select
               value={formGroupId}
               onChange={(e) => setFormGroupId(e.target.value)}
-              className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+              className="input-fancy"
             >
               {groups.map((group) => (
                 <option key={group.id} value={group.id}>{group.name}</option>
