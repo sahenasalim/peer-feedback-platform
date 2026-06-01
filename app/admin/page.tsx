@@ -3,6 +3,8 @@ import { AdminGroupManager } from "@/components/AdminGroupManager";
 import { AdminGate } from "@/components/AdminGate";
 import { LogoutButton } from "@/components/LogoutButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const [groups, users, forms] = await Promise.all([
     prisma.group.findMany({
