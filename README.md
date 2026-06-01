@@ -25,7 +25,7 @@ npm run seed
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `https://peer-feedback-platform-fawn.vercel.app`.
 
 Demo students:
 
