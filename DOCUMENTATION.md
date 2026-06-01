@@ -209,6 +209,9 @@ Next.js caches server component renders by default. The admin panel was showing 
 **Challenge: Database compatibility on Vercel**
 SQLite doesn't work on serverless platforms because there's no persistent file system. I migrated to PostgreSQL on Neon and updated the Prisma schema — a one-line provider change, one migration, and it worked.
 
+**Challenge: Database compatibility on Vercel**
+Email delivery is currently limited to verified addresses on Resend's free tier. In production, I would verify a custom domain (e.g. noreply@peerfeedback.my) which allows sending to any email address. For the demo, the welcome email flow is demonstrated using a verified test address.
+
 ---
 
 ## 7. What I'd improve with more time
