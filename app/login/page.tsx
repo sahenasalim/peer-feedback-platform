@@ -195,7 +195,7 @@ export default function LoginPage() {
           ["2", "Feedback stays anonymous", "Reviews are stored securely. Peers never see who wrote what."],
           ["3", "AI does the heavy lifting", "After reviews are submitted, Groq generates a structured summary with actionable advice."],
         ].map(([step, title, body]) => (
-          <div key={step} className="glass-card rounded-[1.75rem] border border-slate-200/70 p-6">
+          <div key={step} className="glass-card card-hover rounded-[1.75rem] border border-slate-200/70 p-6">
             <div className="flex items-start gap-4">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-sm font-bold text-emerald-800">
                 {step}

@@ -34,8 +34,6 @@ export function AdminGroupManager({
   const [formTitle, setFormTitle] = useState("");
   const [formGroupId, setFormGroupId] = useState(initialGroups[0]?.id ?? "");
   const [generating, setGenerating] = useState<string | null>(null);
-
-  // New student registration
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -112,7 +110,7 @@ export function AdminGroupManager({
     setNewName("");
     setNewEmail("");
     setNewPassword("");
-    toast.success(`${payload.user.name} added successfully`);
+    toast.success(`${payload.user.name} added — welcome email sent`);
   }
 
   async function createForm() {
@@ -189,14 +187,16 @@ export function AdminGroupManager({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[380px,1fr]">
-      {/* LEFT SIDEBAR */}
-      <aside className="space-y-5">
+    <div className="space-y-6">
+
+      {/* TOP ROW — three management cards */}
+      <div className="grid gap-5 md:grid-cols-3">
 
         {/* Create Group */}
-        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-950">Create group</h2>
-          <div className="mt-3 flex gap-2">
+        <section className="glass-card rounded-[1.75rem] p-6">
+          <h2 className="text-base font-bold text-slate-950">Create group</h2>
+          <p className="mt-1 text-xs text-slate-500">Organise students into project groups.</p>
+          <div className="mt-4 flex gap-2">
             <input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
@@ -205,19 +205,19 @@ export function AdminGroupManager({
             />
             <button
               onClick={createGroup}
-              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
             >
               Create
             </button>
           </div>
           <div className="mt-4 space-y-2">
             {groups.length === 0 && (
-              <p className="text-sm text-slate-500">No groups yet.</p>
+              <p className="text-sm text-slate-400">No groups yet.</p>
             )}
             {groups.map((group) => (
               <div key={group.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
                 <p className="text-sm font-medium text-slate-900">{group.name}</p>
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                   {group.members.length} members
                 </span>
               </div>
@@ -225,13 +225,14 @@ export function AdminGroupManager({
           </div>
         </section>
 
-        {/* Add Member to Group */}
-        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-950">Add member to group</h2>
+        {/* Add Member */}
+        <section className="glass-card rounded-[1.75rem] p-6">
+          <h2 className="text-base font-bold text-slate-950">Add member to group</h2>
+          <p className="mt-1 text-xs text-slate-500">Assign an existing student to a group.</p>
           <select
             value={memberGroupId}
             onChange={(e) => setMemberGroupId(e.target.value)}
-            className="input-fancy mt-3"
+            className="input-fancy mt-4"
           >
             {groups.map((group) => (
               <option key={group.id} value={group.id}>{group.name}</option>
@@ -250,21 +251,21 @@ export function AdminGroupManager({
           <button
             onClick={addMember}
             disabled={!memberGroupId || !memberUserId}
-            className="mt-3 w-full rounded-xl bg-slate-950 px-3 py-2 text-sm font-medium text-white disabled:bg-slate-300"
+            className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:bg-slate-300"
           >
             Add member
           </button>
         </section>
 
         {/* Register New Student */}
-        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-950">Register new student</h2>
-          <p className="mt-1 text-xs text-slate-500">Add a new student account to the platform.</p>
+        <section className="glass-card rounded-[1.75rem] p-6">
+          <h2 className="text-base font-bold text-slate-950">Register new student</h2>
+          <p className="mt-1 text-xs text-slate-500">A welcome email with credentials is sent automatically.</p>
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Full name"
-            className="input-fancy mt-3"
+            className="input-fancy mt-4"
           />
           <input
             value={newEmail}
@@ -276,171 +277,168 @@ export function AdminGroupManager({
           <input
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Temporary password (share with student)"
+            placeholder="Temporary password"
             type="password"
             className="input-fancy mt-3"
           />
           <button
             onClick={addNewStudent}
             disabled={addingStudent}
-            className="mt-3 w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:bg-slate-300"
+            className="mt-4 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-300"
           >
             {addingStudent ? "Adding..." : "Add student"}
           </button>
         </section>
-      </aside>
+      </div>
 
-      {/* MAIN CONTENT */}
-      <main className="space-y-6">
-
-        {/* Create Feedback Form */}
-        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-950">Create feedback form</h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr,180px,auto]">
-            <input
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-              placeholder="e.g. Sprint 2 Peer Review"
-              className="rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            />
-            <select
-              value={formGroupId}
-              onChange={(e) => setFormGroupId(e.target.value)}
-              className="input-fancy"
-            >
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>{group.name}</option>
-              ))}
-            </select>
-            <button
-              onClick={createForm}
-              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-            >
-              Create
-            </button>
-          </div>
-        </section>
-
-        {/* Feedback Forms List */}
-        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-950">Feedback forms</h2>
-          <div className="mt-4 space-y-4">
-            {forms.length === 0 && (
-              <p className="text-sm text-slate-500">No forms yet. Create one above.</p>
-            )}
-            {forms.map((form) => (
-              <div key={form.id} className="rounded-2xl border border-slate-200 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="font-semibold text-slate-950">{form.title}</h3>
-                    <p className="text-sm text-slate-500">
-                      {form.group.name}
-                      <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${form.isOpen ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
-                        {form.isOpen ? "Open" : "Closed"}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => toggleForm(form)}
-                      className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      {form.isOpen ? "Close form" : "Open form"}
-                    </button>
-                    <button
-                      onClick={() => deleteForm(form)}
-                      className="rounded-xl border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  {form.group.members.map(({ user }) => {
-                    const ratings = form.submissions
-                      .filter((s) => s.targetUserId === user.id)
-                      .map((s) => s.rating);
-                    const average = ratings.length
-                      ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
-                      : 0;
-                    const summary = form.summaries.find((s) => s.targetUserId === user.id);
-                    const key = `${form.id}:${user.id}`;
-                    const hasFeedback = ratings.length > 0;
-
-                    return (
-                      <div key={user.id} className="rounded-2xl bg-slate-50 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-medium text-slate-900">{user.name}</p>
-                            <p className="text-xs text-slate-500">{ratings.length} review{ratings.length !== 1 ? "s" : ""} received</p>
-                          </div>
-                          {hasFeedback && <StarRating value={Math.round(average)} readOnly />}
-                        </div>
-                        {hasFeedback && (
-                          <p className="mt-1 text-xs text-slate-500">
-                            {average.toFixed(1)} average rating
-                          </p>
-                        )}
-                        <button
-                          onClick={() => generateSummary(form.id, user.id)}
-                          disabled={!hasFeedback || generating === key}
-                          className={`mt-3 w-full rounded-xl px-3 py-2 text-sm font-medium text-white transition ${
-                            !hasFeedback
-                              ? "bg-slate-300 cursor-not-allowed"
-                              : summary?.status === "GENERATED"
-                                ? "bg-emerald-600 hover:bg-emerald-700"
-                                : summary?.status === "FAILED"
-                                  ? "bg-rose-600 hover:bg-rose-700"
-                                  : "bg-emerald-600 hover:bg-emerald-700"
-                          }`}
-                        >
-                          {generating === key
-                            ? "Generating..."
-                            : !hasFeedback
-                              ? "Needs feedback first"
-                              : summary?.status === "GENERATED"
-                                ? "Regenerate AI summary"
-                                : summary?.status === "FAILED"
-                                  ? "Retry AI summary"
-                                  : "Generate AI summary"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+      {/* Create Feedback Form */}
+      <section className="glass-card rounded-[1.75rem] p-6">
+        <h2 className="text-base font-bold text-slate-950">Create feedback form</h2>
+        <p className="mt-1 text-xs text-slate-500">Open a new review round for a group.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr,200px,auto]">
+          <input
+            value={formTitle}
+            onChange={(e) => setFormTitle(e.target.value)}
+            placeholder="e.g. Sprint 2 Peer Review"
+            className="input-fancy"
+          />
+          <select
+            value={formGroupId}
+            onChange={(e) => setFormGroupId(e.target.value)}
+            className="input-fancy"
+          >
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>{group.name}</option>
             ))}
-          </div>
-        </section>
+          </select>
+          <button
+            onClick={createForm}
+            className="rounded-xl bg-slate-950 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Create
+          </button>
+        </div>
+      </section>
 
-        {/* Aggregate Stats */}
-        <section className="rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-950">Aggregate stats</h2>
-          <p className="mt-1 text-xs text-slate-500">Average ratings across all forms per student.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {stats.length === 0 && (
-              <p className="text-sm text-slate-500">No ratings yet.</p>
-            )}
-            {stats.map((item) => (
-              <div key={item.userId} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+      {/* Feedback Forms List */}
+      <section className="glass-card rounded-[1.75rem] p-6">
+        <h2 className="text-base font-bold text-slate-950">Feedback forms</h2>
+        <p className="mt-1 text-xs text-slate-500">Monitor submissions and generate AI summaries per student.</p>
+        <div className="mt-5 space-y-5">
+          {forms.length === 0 && (
+            <p className="text-sm text-slate-400">No forms yet. Create one above.</p>
+          )}
+          {forms.map((form) => (
+            <div key={form.id} className="rounded-2xl border border-slate-200 p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{item.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {item.count ? `${item.count} review${item.count !== 1 ? "s" : ""}` : "No reviews yet"}
+                  <h3 className="font-bold text-slate-950">{form.title}</h3>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    {form.group.name}
+                    <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-bold ${
+                      form.isOpen ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+                    }`}>
+                      {form.isOpen ? "Open" : "Closed"}
+                    </span>
                   </p>
                 </div>
-                {item.count > 0 && (
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-slate-950">{item.average.toFixed(1)}</p>
-                    <StarRating value={Math.round(item.average)} readOnly />
-                  </div>
-                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => toggleForm(form)}
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    {form.isOpen ? "Close form" : "Open form"}
+                  </button>
+                  <button
+                    onClick={() => deleteForm(form)}
+                    className="rounded-xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        </section>
-      </main>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {form.group.members.map(({ user }) => {
+                  const ratings = form.submissions
+                    .filter((s) => s.targetUserId === user.id)
+                    .map((s) => s.rating);
+                  const average = ratings.length
+                    ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+                    : 0;
+                  const summary = form.summaries.find((s) => s.targetUserId === user.id);
+                  const key = `${form.id}:${user.id}`;
+                  const hasFeedback = ratings.length > 0;
+
+                  return (
+                    <div key={user.id} className="rounded-2xl bg-slate-50 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{user.name}</p>
+                          <p className="text-xs text-slate-500">{ratings.length} review{ratings.length !== 1 ? "s" : ""}</p>
+                        </div>
+                        {hasFeedback && <StarRating value={Math.round(average)} readOnly />}
+                      </div>
+                      {hasFeedback && (
+                        <p className="mt-1 text-xs text-slate-400">{average.toFixed(1)} avg</p>
+                      )}
+                      <button
+                        onClick={() => generateSummary(form.id, user.id)}
+                        disabled={!hasFeedback || generating === key}
+                        className={`mt-3 w-full rounded-xl px-3 py-2 text-xs font-bold text-white transition ${
+                          !hasFeedback
+                            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                            : summary?.status === "FAILED"
+                              ? "bg-rose-500 hover:bg-rose-600"
+                              : summary?.status === "GENERATED"
+                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                : "bg-emerald-600 hover:bg-emerald-700"
+                        }`}
+                      >
+                        {generating === key
+                          ? "Generating..."
+                          : !hasFeedback
+                            ? "No feedback yet"
+                            : summary?.status === "GENERATED"
+                              ? "Regenerate summary"
+                              : summary?.status === "FAILED"
+                                ? "Retry summary"
+                                : "Generate summary"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Aggregate Stats */}
+      <section className="glass-card rounded-[1.75rem] p-6">
+        <h2 className="text-base font-bold text-slate-950">Aggregate stats</h2>
+        <p className="mt-1 text-xs text-slate-500">Average ratings across all forms per student.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.length === 0 && (
+            <p className="text-sm text-slate-400">No ratings yet.</p>
+          )}
+          {stats.map((item) => (
+            <div key={item.userId} className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-sm font-bold text-slate-900">{item.name}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {item.count ? `${item.count} review${item.count !== 1 ? "s" : ""}` : "No reviews yet"}
+              </p>
+              {item.count > 0 && (
+                <div className="mt-2">
+                  <p className="text-lg font-bold text-slate-950">{item.average.toFixed(1)}</p>
+                  <StarRating value={Math.round(item.average)} readOnly />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 }

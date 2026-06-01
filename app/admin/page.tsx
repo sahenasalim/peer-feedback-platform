@@ -24,13 +24,13 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main className="mx-auto min-h-screen max-w-7xl px-4 py-8">
-      <header className="glass-card mb-8 rounded-[2rem] border border-slate-200/80 bg-white/90 p-8 shadow-strong">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+    <main className="mx-auto min-h-screen max-w-6xl px-4 py-8">
+      <header className="glass-card rounded-[2rem] p-8 shadow-strong mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-emerald-700">Admin</p>
-            <h1 className="text-3xl font-bold text-slate-950">Peer feedback control center</h1>
-            <p className="mt-2 text-slate-600">Create review forms, monitor submissions, and generate AI summaries.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">Admin</p>
+            <h1 className="mt-1 text-3xl font-bold text-slate-950">Peer feedback control center</h1>
+            <p className="mt-1 text-sm text-slate-500">Create review forms, monitor submissions, and generate AI summaries.</p>
           </div>
           <LogoutButton />
         </div>
