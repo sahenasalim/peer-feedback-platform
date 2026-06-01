@@ -12,6 +12,7 @@ export default async function AdminPage() {
       include: { members: { include: { user: { select: { id: true, name: true, email: true } } } } },
     }),
     prisma.user.findMany({
+      where: { role: "STUDENT" },
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true },
     }),
